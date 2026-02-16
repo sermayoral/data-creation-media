@@ -7,6 +7,7 @@ from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
 
 DATE_TIME_ORIG_TAG = 36867
+GPS_INFO_TAG = 34853
 
 imgFormats = ['png', 'jpg', 'jpeg']
 #videoFormats = ['m4v', 'mov', 'mp4']
@@ -31,6 +32,7 @@ def process(path, year_from, path_move_media):
           im = Image.open(filepath)
           exif = im._getexif()
           im.close()
+          # Fecha de captura
           if DATE_TIME_ORIG_TAG in exif:
             if not exif[DATE_TIME_ORIG_TAG]:
               valid_media = 2
@@ -41,6 +43,13 @@ def process(path, year_from, path_move_media):
           else:
             valid_media = 2
             logger.info('No se encuentra la fecha de captura en la imagen')
+          # Ubicacion GPS
+          if GPS_INFO_TAG in exif:
+            gps_data = exif[GPS_INFO_TAG]
+            logger.info('La imagen SI tiene ubicacion GPS definida')
+          else:
+            valid_media = 4
+            logger.info('La imagen NO tiene ubicacion GPS definida')
         except Exception as err:
           valid_media = 3
           logger.error(err)
@@ -80,6 +89,8 @@ def process(path, year_from, path_move_media):
           logger.warning('El archivo %s no contiene el metadato de fecha de creacion', filepath)
         elif valid_media == 3:
           logger.warning('No se pueden extraer metadatos del archivo %s', filepath)
+        elif valid_media == 4:
+          logger.warning('El archivo %s no contiene el metadato de ubicacion', filepath)
         # En caso de que se desee mover el fichero a un path
         if path_move_media:
           if not os.path.exists(path_move_media):
